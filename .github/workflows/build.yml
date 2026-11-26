@@ -1,1 +1,36 @@
-
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack project
+        run: |
+          unzip -q -o ContentDownloader.zip -d proj
+          ls proj
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+      - name: Build
+        working-directory: proj
+        run: gradle assembleDebug --no-daemon --stacktrace
+      - name: Publish APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Content Downloader build ${{ github.run_number }}
+          files: proj/app/build/outputs/apk/debug/app-debug.apk
